@@ -39,12 +39,10 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 .chart-card{background:var(--white);border:1px solid var(--border);padding:24px;overflow:hidden;}
 .chart-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;margin-bottom:3px;}
 .chart-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:20px;}
-
 .chart-wrap{position:relative;width:100%;}
 .chart-wrap-large{height:280px;}
 .chart-wrap-small{height:280px;}
 .chart-wrap canvas{display:block;width:100% !important;height:100% !important;}
-
 .bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--ivory);}
 .stat-row:last-child{border-bottom:none;}
@@ -107,12 +105,11 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 .error-state{padding:16px;background:#fdecea;color:var(--red);font-size:12px;line-height:1.6;}
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:12px;}
 
-@media (max-width: 1100px){
+@media (max-width:1100px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .charts-row,.bottom-row,.summary-grid{grid-template-columns:1fr;}
 }
-
-@media (max-width: 740px){
+@media (max-width:740px){
   nav{padding:0 18px;height:auto;min-height:60px;flex-wrap:wrap;gap:10px;padding-top:12px;padding-bottom:12px;}
   main{padding:20px 18px;}
   .kpi-grid{grid-template-columns:1fr;}
@@ -229,6 +226,7 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 const API = '/api/shopify';
 let days = 30, allOrders = [], activeProducts = [], archiveProducts = [];
 let revChart, topChart;
+let aiCtx = '';
 
 async function apiFetch(type) {
   const r = await fetch(`${API}?type=${type}&days=${days}`);
@@ -239,14 +237,17 @@ async function apiFetch(type) {
 async function loadAll() {
   try {
     [allOrders, activeProducts, archiveProducts] = await Promise.all([
-      apiFetch('orders'), apiFetch('active'), apiFetch('archive')
+      apiFetch('orders'),
+      apiFetch('active'),
+      apiFetch('archive')
     ]);
     renderOverview();
     renderBestsellers();
-  } catch(e) {
+  } catch (e) {
     const msg = `<div class="error-state">⚠ ${e.message}</div>`;
-    ['summary-active','summary-archive','category-breakdown'].forEach(id => {
-      document.getElementById(id).innerHTML = msg;
+    ['summary-active','summary-archive','category-breakdown','detail-active','detail-archive'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = msg;
     });
   }
 }
@@ -276,9 +277,18 @@ function renderOverview() {
 function getLineSales() {
   const map = {};
   allOrders.forEach(o => (o.line_items || []).forEach(li => {
-    if (!map[li.product_id]) map[li.product_id] = {name: li.title, qty: 0, rev: 0};
-    map[li.product_id].qty += li.quantity;
-    map[li.product_id].rev += parseFloat(li.price) * li.quantity;
+    const key = li.product_id || li.title;
+    if (!map[key]) {
+      map[key] = {
+        productId: li.product_id,
+        name: li.title,
+        qty: 0,
+        rev: 0,
+        product_type: li.product_type || 'Other'
+      };
+    }
+    map[key].qty += li.quantity || 0;
+    map[key].rev += (parseFloat(li.price || 0) * (li.quantity || 0));
   }));
   return map;
 }
@@ -287,7 +297,7 @@ function getVariantSales() {
   const map = {};
   allOrders.forEach(o => (o.line_items || []).forEach(li => {
     const k = `${li.product_id}__${li.variant_id}`;
-    map[k] = (map[k] || 0) + li.quantity;
+    map[k] = (map[k] || 0) + (li.quantity || 0);
   }));
   return map;
 }
@@ -295,7 +305,8 @@ function getVariantSales() {
 function renderRevenueChart() {
   const buckets = {};
   allOrders.forEach(o => {
-    const d = o.created_at.slice(0,10);
+    const d = (o.created_at || '').slice(0,10);
+    if (!d) return;
     buckets[d] = (buckets[d] || 0) + parseFloat(o.total_price || 0);
   });
 
@@ -307,10 +318,10 @@ function renderRevenueChart() {
   if (revChart) revChart.destroy();
 
   revChart = new Chart(document.getElementById('revenueChart').getContext('2d'), {
+    type: 'line',
     data: {
       labels,
       datasets: [{
-        type: 'line',
         label: 'Revenue (€)',
         data: vals,
         borderColor: '#b8965a',
@@ -318,7 +329,7 @@ function renderRevenueChart() {
         pointRadius: 2,
         pointBackgroundColor: '#b8965a',
         fill: true,
-        tension: 0.4,
+        tension: 0.35,
         backgroundColor: ctx => {
           const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 280);
           g.addColorStop(0, 'rgba(184,150,90,0.15)');
@@ -334,7 +345,7 @@ function renderRevenueChart() {
       plugins: {
         legend: {
           labels: {
-            font: {family: 'Jost', size: 11},
+            font: { family: 'Jost', size: 11 },
             color: '#7a6e5f',
             boxWidth: 12
           }
@@ -342,17 +353,17 @@ function renderRevenueChart() {
       },
       scales: {
         y: {
-          grid: {color: 'rgba(0,0,0,0.04)'},
+          grid: { color: 'rgba(0,0,0,0.04)' },
           ticks: {
-            font: {family: 'Jost', size: 11},
+            font: { family: 'Jost', size: 11 },
             color: '#7a6e5f',
             callback: v => '€' + v
           }
         },
         x: {
-          grid: {display: false},
+          grid: { display: false },
           ticks: {
-            font: {family: 'Jost', size: 10},
+            font: { family: 'Jost', size: 10 },
             color: '#7a6e5f',
             maxTicksLimit: 10
           }
@@ -371,7 +382,7 @@ function renderTopProductsChart() {
   topChart = new Chart(document.getElementById('topProductsChart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: sorted.map(p => p.name.length > 22 ? p.name.slice(0,20) + '…' : p.name),
+      labels: sorted.map(p => p.name.length > 24 ? p.name.slice(0,22) + '…' : p.name),
       datasets: [{
         data: sorted.map(p => p.qty),
         backgroundColor: 'rgba(184,150,90,0.2)',
@@ -384,19 +395,19 @@ function renderTopProductsChart() {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      plugins: {legend: {display: false}},
+      plugins: { legend: { display: false } },
       scales: {
         x: {
-          grid: {color: 'rgba(0,0,0,0.04)'},
+          grid: { color: 'rgba(0,0,0,0.04)' },
           ticks: {
-            font: {family: 'Jost', size: 11},
+            font: { family: 'Jost', size: 11 },
             color: '#7a6e5f'
           }
         },
         y: {
-          grid: {display: false},
+          grid: { display: false },
           ticks: {
-            font: {family: 'Jost', size: 10},
+            font: { family: 'Jost', size: 10 },
             color: '#7a6e5f'
           }
         }
@@ -406,11 +417,13 @@ function renderTopProductsChart() {
 }
 
 function renderCategoryBreakdown() {
+  const sales = getLineSales();
   const catMap = {};
-  allOrders.forEach(o => (o.line_items || []).forEach(li => {
-    const cat = li.product_type || 'Other';
-    catMap[cat] = (catMap[cat] || 0) + parseFloat(li.price) * li.quantity;
-  }));
+
+  Object.values(sales).forEach(item => {
+    const cat = item.product_type || 'Other';
+    catMap[cat] = (catMap[cat] || 0) + item.rev;
+  });
 
   const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
   const total = sorted.reduce((s,[,v])=>s+v,0);
@@ -435,26 +448,39 @@ function renderBestsellers() {
 
 function buildSection(products, salesMap, varSales, id) {
   const enriched = products.map(p => {
-    const s = salesMap[p.id] || {qty: 0, rev: 0};
+    const s = salesMap[p.id] || { qty: 0, rev: 0 };
     const variants = (p.variants || []).map(v => {
       const sold = varSales[`${p.id}__${v.id}`] || 0;
-      const soldOut = v.inventory_quantity !== undefined && v.inventory_quantity <= 0;
-      return {size: v.title, sold, soldOut, inventory: v.inventory_quantity};
+      const inventory = typeof v.inventory_quantity === 'number' ? v.inventory_quantity : null;
+      return {
+        size: v.title,
+        sold,
+        inventory,
+        soldOut: inventory !== null && inventory <= 0
+      };
     });
-    const soVariants = [...variants].filter(v => v.soldOut).sort((a,b)=>b.sold-a.sold);
-    soVariants.forEach((v,i)=>v.soldOutAt=i+1);
-    return {...p, totalSold:s.qty, totalRev:s.rev, variants};
-  }).filter(p => p.totalSold > 0 || p.variants.some(v => v.soldOut)).sort((a,b)=>b.totalSold-a.totalSold);
+
+    const soldOutVariants = variants.filter(v => v.soldOut).sort((a,b)=>b.sold-a.sold);
+    soldOutVariants.forEach((v,i) => { v.soldOutAt = i + 1; });
+
+    return {
+      ...p,
+      totalSold: s.qty,
+      totalRev: s.rev,
+      variants
+    };
+  }).filter(p => p.totalSold > 0 || p.variants.some(v => v.soldOut))
+    .sort((a,b)=>b.totalSold-a.totalSold);
 
   renderSummary(enriched.slice(0,6), `summary-${id}`);
-  renderDetail(enriched.slice(0,10), `detail-${id}`);
+  renderDetail(enriched.slice(0,12), `detail-${id}`);
 }
 
-function soLabel(n){
-  if(n===1)return'<span class="so-badge so-1">Sold out 1st</span>';
-  if(n===2)return'<span class="so-badge so-2">Sold out 2nd</span>';
-  if(n===3)return'<span class="so-badge so-3">Sold out 3rd</span>';
-  return'<span class="so-badge so-none">Available</span>';
+function soLabel(n) {
+  if (n === 1) return '<span class="so-badge so-1">Sold out 1st</span>';
+  if (n === 2) return '<span class="so-badge so-2">Sold out 2nd</span>';
+  if (n === 3) return '<span class="so-badge so-3">Sold out 3rd</span>';
+  return '<span class="so-badge so-none">Available</span>';
 }
 
 function renderSummary(items, cId) {
@@ -466,19 +492,19 @@ function renderSummary(items, cId) {
 
   c.innerHTML = items.map((item,i) => {
     const best = item.variants.reduce((a,b)=>b.sold>a.sold?b:a,{size:'—',sold:0});
-    const firstSO = item.variants.find(v=>v.soldOutAt===1);
+    const firstSO = item.variants.find(v => v.soldOutAt === 1);
 
     return `
       <div class="sum-card">
         <div class="sum-rank">${i+1}</div>
         <div class="sum-name">${item.title}</div>
-        <div class="sum-category">${item.product_type||'Product'}</div>
+        <div class="sum-category">${item.product_type || 'Product'}</div>
         <div class="sum-stats">
           <div class="sum-stat"><span class="sum-stat-label">Units sold</span><span>${item.totalSold}</span></div>
           <div class="sum-stat"><span class="sum-stat-label">Revenue</span><span>${fmt(item.totalRev)}</span></div>
           <div class="sum-stat"><span class="sum-stat-label">Best size</span><span><span class="badge badge-gold">${best.size}</span></span></div>
-          <div class="sum-stat"><span class="sum-stat-label">Sold out first</span><span>${firstSO?`<span class="badge badge-red">${firstSO.size}</span>`:'<span class="badge" style="background:var(--ivory);color:var(--muted)">None</span>'}</span></div>
-          ${firstSO?`<div class="sold-out-note">Size ${firstSO.size} sold out after ${firstSO.sold} units</div>`:''}
+          <div class="sum-stat"><span class="sum-stat-label">Sold out first</span><span>${firstSO ? `<span class="badge badge-red">${firstSO.size}</span>` : '<span class="badge" style="background:var(--ivory);color:var(--muted)">None</span>'}</span></div>
+          ${firstSO ? `<div class="sold-out-note">Size ${firstSO.size} sold out after ${firstSO.sold} units</div>` : ''}
         </div>
       </div>
     `;
@@ -492,13 +518,13 @@ function renderDetail(items, cId) {
     return;
   }
 
-  const maxSold = Math.max(...items.flatMap(i=>i.variants.map(v=>v.sold)),1);
+  const maxSold = Math.max(...items.flatMap(i => i.variants.map(v => v.sold)), 1);
 
   c.innerHTML = items.map(item => `
     <div class="detail-item">
       <div class="detail-item-header">
         <span class="detail-item-name">${item.title}</span>
-        <span class="detail-item-cat">${item.product_type||''}</span>
+        <span class="detail-item-cat">${item.product_type || ''}</span>
       </div>
       <table class="size-table">
         <thead>
@@ -509,8 +535,8 @@ function renderDetail(items, cId) {
             <tr>
               <td><span class="size-pill">${v.size}</span></td>
               <td>${v.sold}</td>
-              <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${Math.round(v.sold/maxSold*100)}%"></div></div></td>
-              <td>${v.inventory!=null?v.inventory+' left':'—'}</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${Math.round((v.sold/maxSold)*100)}%"></div></div></td>
+              <td>${v.inventory !== null ? `${v.inventory} left` : '—'}</td>
               <td>${soLabel(v.soldOutAt)}</td>
             </tr>
           `).join('')}
@@ -520,15 +546,16 @@ function renderDetail(items, cId) {
   `).join('');
 }
 
-let aiCtx='';
-
 function buildAIContext(rev,aov,custs) {
   const top5 = Object.values(getLineSales()).sort((a,b)=>b.qty-a.qty).slice(0,5);
-  aiCtx = `You are an analytics assistant for LRDM Petits, a luxury children's clothing brand in Amsterdam.
-Live Shopify data (last ${days} days): Revenue: ${fmt(rev)}, Orders: ${allOrders.length}, AOV: ${fmt(aov)}, Customers: ${custs}.
-Top products: ${top5.map(p=>`${p.name} (${p.qty} sold)`).join(', ')}.
-Active products: ${activeProducts.length}, Archive/draft: ${archiveProducts.length}.
-Answer warmly, professionally, in 3-4 sentences max. Give actionable buying advice where relevant.`;
+  aiCtx = `You are an analytics assistant for LRDM Petits, a luxury children's clothing brand.
+Live Shopify data for the last ${days} days:
+Revenue: ${fmt(rev)}
+Orders: ${allOrders.length}
+Average order value: ${fmt(aov)}
+Unique customers: ${custs}
+Top products: ${top5.map(p => `${p.name} (${p.qty} sold)`).join(', ')}.
+Answer warmly, clearly, and practically. Keep responses concise and useful for buying and merchandising decisions.`;
 }
 
 async function sendAI() {
@@ -547,45 +574,46 @@ async function sendAI() {
   btn.disabled = true;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:1000,
-        system:aiCtx||'You are an e-commerce assistant for LRDM Petits.',
-        messages:[{role:'user',content:q}]
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: q,
+        context: aiCtx || 'You are an e-commerce assistant for LRDM Petits.'
       })
     });
 
     const data = await res.json();
-    const reply = data.content?.map(b=>b.text||'').join('') || 'Unable to respond.';
-    document.getElementById('typingMsg').outerHTML = `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">${reply}</div></div>`;
-  } catch(e) {
-    document.getElementById('typingMsg').outerHTML = `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Something went wrong. Please try again.</div></div>`;
+    const reply = data.reply || data.error || 'Something went wrong. Please try again.';
+
+    document.getElementById('typingMsg').outerHTML =
+      `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">${reply}</div></div>`;
+  } catch (e) {
+    document.getElementById('typingMsg').outerHTML =
+      `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Something went wrong. Please try again.</div></div>`;
   }
 
   btn.disabled = false;
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function showPage(id,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.page-tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
   btn.classList.add('active');
 }
 
-function showBsSection(id,btn){
-  document.querySelectorAll('.bs-section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.bs-tab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('bs-'+id).classList.add('active');
+function showBsSection(id, btn) {
+  document.querySelectorAll('.bs-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bs-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById('bs-' + id).classList.add('active');
   btn.classList.add('active');
 }
 
-function setPeriod(d,btn){
+function setPeriod(d, btn) {
   days = d;
-  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   loadAll();
 }
