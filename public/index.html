@@ -27,18 +27,25 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 .page-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;}
 .page-tab{padding:10px 22px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Jost',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
 .page-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
-.page{display:none;}.page.active{display:block;}
+.page{display:none;}
+.page.active{display:block;}
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
 .kpi-card{background:var(--white);border:1px solid var(--border);padding:20px;position:relative;overflow:hidden;}
 .kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-light));}
 .kpi-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
 .kpi-value{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;line-height:1;margin-bottom:8px;}
 .kpi-sub{font-size:10px;color:var(--muted);}
-.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:24px;}
-.chart-card{background:var(--white);border:1px solid var(--border);padding:24px;}
-.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:24px;align-items:start;}
+.chart-card{background:var(--white);border:1px solid var(--border);padding:24px;overflow:hidden;}
 .chart-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;margin-bottom:3px;}
 .chart-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:20px;}
+
+.chart-wrap{position:relative;width:100%;}
+.chart-wrap-large{height:280px;}
+.chart-wrap-small{height:280px;}
+.chart-wrap canvas{display:block;width:100% !important;height:100% !important;}
+
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;}
 .stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--ivory);}
 .stat-row:last-child{border-bottom:none;}
 .stat-name{font-size:12px;}
@@ -61,7 +68,8 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 .bs-tabs{display:flex;gap:8px;margin-bottom:20px;}
 .bs-tab{padding:6px 18px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Jost',sans-serif;border-radius:2px;transition:all .2s;}
 .bs-tab.active{background:var(--gold);color:#fff;border-color:var(--gold);}
-.bs-section{display:none;}.bs-section.active{display:block;}
+.bs-section{display:none;}
+.bs-section.active{display:block;}
 .summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
 .sum-card{background:var(--white);border:1px solid var(--border);padding:18px;position:relative;}
 .sum-rank{position:absolute;top:14px;right:14px;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--gold-pale);}
@@ -98,6 +106,18 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 .loading-text{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
 .error-state{padding:16px;background:#fdecea;color:var(--red);font-size:12px;line-height:1.6;}
 .empty-state{padding:40px;text-align:center;color:var(--muted);font-size:12px;}
+
+@media (max-width: 1100px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-row,.bottom-row,.summary-grid{grid-template-columns:1fr;}
+}
+
+@media (max-width: 740px){
+  nav{padding:0 18px;height:auto;min-height:60px;flex-wrap:wrap;gap:10px;padding-top:12px;padding-bottom:12px;}
+  main{padding:20px 18px;}
+  .kpi-grid{grid-template-columns:1fr;}
+  .chart-wrap-large,.chart-wrap-small{height:220px;}
+}
 </style>
 </head>
 <body>
@@ -119,39 +139,48 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
     </div>
   </div>
 </nav>
+
 <main>
   <div class="page-tabs">
     <button class="page-tab active" onclick="showPage('overview',this)">Overview</button>
     <button class="page-tab" onclick="showPage('bestsellers',this)">Bestsellers & Sizes</button>
   </div>
 
-  <!-- OVERVIEW -->
   <div class="page active" id="page-overview">
     <div class="section-label">Overview</div>
+
     <div class="kpi-grid">
       <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-rev">—</div><div class="kpi-sub" id="kpi-rev-sub">Loading…</div></div>
       <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-orders">—</div><div class="kpi-sub" id="kpi-orders-sub">Loading…</div></div>
       <div class="kpi-card"><div class="kpi-label">Avg. Order Value</div><div class="kpi-value" id="kpi-aov">—</div><div class="kpi-sub" id="kpi-aov-sub">Loading…</div></div>
       <div class="kpi-card"><div class="kpi-label">Unique Customers</div><div class="kpi-value" id="kpi-cust">—</div><div class="kpi-sub" id="kpi-cust-sub">Loading…</div></div>
     </div>
+
     <div class="charts-row">
       <div class="chart-card">
         <div class="chart-title">Revenue Over Time</div>
         <div class="chart-sub" id="rev-chart-sub">Loading…</div>
-        <canvas id="revenueChart" height="110"></canvas>
+        <div class="chart-wrap chart-wrap-large">
+          <canvas id="revenueChart"></canvas>
+        </div>
       </div>
+
       <div class="chart-card">
         <div class="chart-title">Top Products</div>
         <div class="chart-sub">By units sold this period</div>
-        <canvas id="topProductsChart" height="200"></canvas>
+        <div class="chart-wrap chart-wrap-small">
+          <canvas id="topProductsChart"></canvas>
+        </div>
       </div>
     </div>
+
     <div class="bottom-row">
       <div class="chart-card">
         <div class="chart-title">Top Categories</div>
         <div class="chart-sub">Revenue share by product type</div>
         <div id="category-breakdown"><div class="loading-state"><div class="loading-spinner"></div></div></div>
       </div>
+
       <div class="ai-card">
         <div class="ai-badge">✦ AI Insights</div>
         <div class="chart-title">Ask your data</div>
@@ -167,13 +196,13 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
     </div>
   </div>
 
-  <!-- BESTSELLERS -->
   <div class="page" id="page-bestsellers">
     <div class="section-label">Bestsellers & Size Intelligence</div>
     <div class="bs-tabs">
       <button class="bs-tab active" onclick="showBsSection('active',this)">Active Collection</button>
       <button class="bs-tab" onclick="showBsSection('archive',this)">Archive / Past Collections</button>
     </div>
+
     <div class="bs-section active" id="bs-active">
       <div class="section-label">Summary — Top Performers</div>
       <div class="summary-grid" id="summary-active"><div class="loading-state"><div class="loading-spinner"></div><div class="loading-text">Fetching products</div></div></div>
@@ -183,6 +212,7 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
         <div id="detail-active"><div class="loading-state"><div class="loading-spinner"></div></div></div>
       </div>
     </div>
+
     <div class="bs-section" id="bs-archive">
       <div class="section-label">Summary — Archive / Past Collections</div>
       <div class="summary-grid" id="summary-archive"><div class="loading-state"><div class="loading-spinner"></div><div class="loading-text">Fetching archive</div></div></div>
@@ -196,7 +226,6 @@ main{padding:24px 28px;max-width:1400px;margin:0 auto;}
 </main>
 
 <script>
-// All API calls go through our Vercel backend — no token exposed in the browser
 const API = '/api/shopify';
 let days = 30, allOrders = [], activeProducts = [], archiveProducts = [];
 let revChart, topChart;
@@ -228,6 +257,7 @@ function renderOverview() {
   const rev = allOrders.reduce((s,o)=>s+parseFloat(o.total_price||0),0);
   const aov = allOrders.length ? rev/allOrders.length : 0;
   const custs = new Set(allOrders.map(o=>o.customer?.id).filter(Boolean)).size;
+
   document.getElementById('kpi-rev').textContent = fmt(rev);
   document.getElementById('kpi-rev-sub').textContent = `Last ${days} days`;
   document.getElementById('kpi-orders').textContent = allOrders.length;
@@ -236,93 +266,188 @@ function renderOverview() {
   document.getElementById('kpi-aov-sub').textContent = 'Per order';
   document.getElementById('kpi-cust').textContent = custs;
   document.getElementById('kpi-cust-sub').textContent = 'Unique buyers';
-  renderRevenueChart(); renderTopProductsChart(); renderCategoryBreakdown();
+
+  renderRevenueChart();
+  renderTopProductsChart();
+  renderCategoryBreakdown();
   buildAIContext(rev, aov, custs);
 }
 
 function getLineSales() {
   const map = {};
-  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
-    if(!map[li.product_id]) map[li.product_id]={name:li.title,qty:0,rev:0};
+  allOrders.forEach(o => (o.line_items || []).forEach(li => {
+    if (!map[li.product_id]) map[li.product_id] = {name: li.title, qty: 0, rev: 0};
     map[li.product_id].qty += li.quantity;
-    map[li.product_id].rev += parseFloat(li.price)*li.quantity;
+    map[li.product_id].rev += parseFloat(li.price) * li.quantity;
   }));
   return map;
 }
 
 function getVariantSales() {
   const map = {};
-  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
-    const k=`${li.product_id}__${li.variant_id}`;
-    map[k]=(map[k]||0)+li.quantity;
+  allOrders.forEach(o => (o.line_items || []).forEach(li => {
+    const k = `${li.product_id}__${li.variant_id}`;
+    map[k] = (map[k] || 0) + li.quantity;
   }));
   return map;
 }
 
 function renderRevenueChart() {
-  const buckets={};
-  allOrders.forEach(o=>{ const d=o.created_at.slice(0,10); buckets[d]=(buckets[d]||0)+parseFloat(o.total_price||0); });
-  const labels=Object.keys(buckets).sort(), vals=labels.map(l=>buckets[l]);
-  document.getElementById('rev-chart-sub').textContent=`Daily revenue · last ${days} days`;
-  if(revChart)revChart.destroy();
-  revChart=new Chart(document.getElementById('revenueChart').getContext('2d'),{
-    data:{labels,datasets:[{type:'line',label:'Revenue (€)',data:vals,borderColor:'#b8965a',borderWidth:2,
-      pointRadius:2,pointBackgroundColor:'#b8965a',fill:true,tension:0.4,
-      backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(184,150,90,0.15)');g.addColorStop(1,'rgba(184,150,90,0)');return g;}}]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{font:{family:'Jost',size:11},color:'#7a6e5f',boxWidth:12}}},
-      scales:{y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'Jost',size:11},color:'#7a6e5f',callback:v=>'€'+v}},
-        x:{grid:{display:false},ticks:{font:{family:'Jost',size:10},color:'#7a6e5f',maxTicksLimit:10}}}}
+  const buckets = {};
+  allOrders.forEach(o => {
+    const d = o.created_at.slice(0,10);
+    buckets[d] = (buckets[d] || 0) + parseFloat(o.total_price || 0);
+  });
+
+  const labels = Object.keys(buckets).sort();
+  const vals = labels.map(l => buckets[l]);
+
+  document.getElementById('rev-chart-sub').textContent = `Daily revenue · last ${days} days`;
+
+  if (revChart) revChart.destroy();
+
+  revChart = new Chart(document.getElementById('revenueChart').getContext('2d'), {
+    data: {
+      labels,
+      datasets: [{
+        type: 'line',
+        label: 'Revenue (€)',
+        data: vals,
+        borderColor: '#b8965a',
+        borderWidth: 2,
+        pointRadius: 2,
+        pointBackgroundColor: '#b8965a',
+        fill: true,
+        tension: 0.4,
+        backgroundColor: ctx => {
+          const g = ctx.chart.ctx.createLinearGradient(0, 0, 0, 280);
+          g.addColorStop(0, 'rgba(184,150,90,0.15)');
+          g.addColorStop(1, 'rgba(184,150,90,0)');
+          return g;
+        }
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          labels: {
+            font: {family: 'Jost', size: 11},
+            color: '#7a6e5f',
+            boxWidth: 12
+          }
+        }
+      },
+      scales: {
+        y: {
+          grid: {color: 'rgba(0,0,0,0.04)'},
+          ticks: {
+            font: {family: 'Jost', size: 11},
+            color: '#7a6e5f',
+            callback: v => '€' + v
+          }
+        },
+        x: {
+          grid: {display: false},
+          ticks: {
+            font: {family: 'Jost', size: 10},
+            color: '#7a6e5f',
+            maxTicksLimit: 10
+          }
+        }
+      }
+    }
   });
 }
 
 function renderTopProductsChart() {
-  const sales=getLineSales();
-  const sorted=Object.values(sales).sort((a,b)=>b.qty-a.qty).slice(0,6);
-  if(topChart)topChart.destroy();
-  topChart=new Chart(document.getElementById('topProductsChart').getContext('2d'),{
-    type:'bar',
-    data:{labels:sorted.map(p=>p.name.length>22?p.name.slice(0,20)+'…':p.name),
-      datasets:[{data:sorted.map(p=>p.qty),backgroundColor:'rgba(184,150,90,0.2)',borderColor:'#b8965a',borderWidth:1}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-      scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'Jost',size:11},color:'#7a6e5f'}},
-        y:{grid:{display:false},ticks:{font:{family:'Jost',size:10},color:'#7a6e5f'}}}}
+  const sales = getLineSales();
+  const sorted = Object.values(sales).sort((a,b)=>b.qty-a.qty).slice(0,6);
+
+  if (topChart) topChart.destroy();
+
+  topChart = new Chart(document.getElementById('topProductsChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(p => p.name.length > 22 ? p.name.slice(0,20) + '…' : p.name),
+      datasets: [{
+        data: sorted.map(p => p.qty),
+        backgroundColor: 'rgba(184,150,90,0.2)',
+        borderColor: '#b8965a',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {legend: {display: false}},
+      scales: {
+        x: {
+          grid: {color: 'rgba(0,0,0,0.04)'},
+          ticks: {
+            font: {family: 'Jost', size: 11},
+            color: '#7a6e5f'
+          }
+        },
+        y: {
+          grid: {display: false},
+          ticks: {
+            font: {family: 'Jost', size: 10},
+            color: '#7a6e5f'
+          }
+        }
+      }
+    }
   });
 }
 
 function renderCategoryBreakdown() {
-  const catMap={};
-  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
-    const cat=li.product_type||'Other';
-    catMap[cat]=(catMap[cat]||0)+parseFloat(li.price)*li.quantity;
+  const catMap = {};
+  allOrders.forEach(o => (o.line_items || []).forEach(li => {
+    const cat = li.product_type || 'Other';
+    catMap[cat] = (catMap[cat] || 0) + parseFloat(li.price) * li.quantity;
   }));
-  const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
-  const total=sorted.reduce((s,[,v])=>s+v,0);
+
+  const sorted = Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+  const total = sorted.reduce((s,[,v])=>s+v,0);
+
   document.getElementById('category-breakdown').innerHTML = sorted.length
-    ? sorted.map(([cat,rev])=>`<div class="stat-row"><span class="stat-name">${cat}</span><div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.round(rev/total*100)}%"></div></div><span class="stat-val">${fmt(rev)}</span></div>`).join('')
+    ? sorted.map(([cat,rev]) => `
+      <div class="stat-row">
+        <span class="stat-name">${cat}</span>
+        <div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.round(rev/total*100)}%"></div></div>
+        <span class="stat-val">${fmt(rev)}</span>
+      </div>
+    `).join('')
     : '<div class="empty-state">No data for this period.</div>';
 }
 
 function renderBestsellers() {
-  const salesMap=getLineSales(), varSales=getVariantSales();
+  const salesMap = getLineSales();
+  const varSales = getVariantSales();
   buildSection(activeProducts, salesMap, varSales, 'active');
   buildSection(archiveProducts, salesMap, varSales, 'archive');
 }
 
 function buildSection(products, salesMap, varSales, id) {
-  const enriched = products.map(p=>{
-    const s=salesMap[p.id]||{qty:0,rev:0};
-    const variants=(p.variants||[]).map(v=>{
-      const sold=varSales[`${p.id}__${v.id}`]||0;
-      const soldOut=v.inventory_quantity!==undefined&&v.inventory_quantity<=0;
-      return{size:v.title,sold,soldOut,inventory:v.inventory_quantity};
+  const enriched = products.map(p => {
+    const s = salesMap[p.id] || {qty: 0, rev: 0};
+    const variants = (p.variants || []).map(v => {
+      const sold = varSales[`${p.id}__${v.id}`] || 0;
+      const soldOut = v.inventory_quantity !== undefined && v.inventory_quantity <= 0;
+      return {size: v.title, sold, soldOut, inventory: v.inventory_quantity};
     });
-    const soVariants=[...variants].filter(v=>v.soldOut).sort((a,b)=>b.sold-a.sold);
+    const soVariants = [...variants].filter(v => v.soldOut).sort((a,b)=>b.sold-a.sold);
     soVariants.forEach((v,i)=>v.soldOutAt=i+1);
-    return{...p,totalSold:s.qty,totalRev:s.rev,variants};
-  }).filter(p=>p.totalSold>0||p.variants.some(v=>v.soldOut)).sort((a,b)=>b.totalSold-a.totalSold);
-  renderSummary(enriched.slice(0,6),`summary-${id}`);
-  renderDetail(enriched.slice(0,10),`detail-${id}`);
+    return {...p, totalSold:s.qty, totalRev:s.rev, variants};
+  }).filter(p => p.totalSold > 0 || p.variants.some(v => v.soldOut)).sort((a,b)=>b.totalSold-a.totalSold);
+
+  renderSummary(enriched.slice(0,6), `summary-${id}`);
+  renderDetail(enriched.slice(0,10), `detail-${id}`);
 }
 
 function soLabel(n){
@@ -333,54 +458,73 @@ function soLabel(n){
 }
 
 function renderSummary(items, cId) {
-  const c=document.getElementById(cId);
-  if(!items.length){c.innerHTML='<div class="empty-state">No sales data found.</div>';return;}
-  c.innerHTML=items.map((item,i)=>{
-    const best=item.variants.reduce((a,b)=>b.sold>a.sold?b:a,{size:'—',sold:0});
-    const firstSO=item.variants.find(v=>v.soldOutAt===1);
-    return`<div class="sum-card">
-      <div class="sum-rank">${i+1}</div>
-      <div class="sum-name">${item.title}</div>
-      <div class="sum-category">${item.product_type||'Product'}</div>
-      <div class="sum-stats">
-        <div class="sum-stat"><span class="sum-stat-label">Units sold</span><span>${item.totalSold}</span></div>
-        <div class="sum-stat"><span class="sum-stat-label">Revenue</span><span>${fmt(item.totalRev)}</span></div>
-        <div class="sum-stat"><span class="sum-stat-label">Best size</span><span><span class="badge badge-gold">${best.size}</span></span></div>
-        <div class="sum-stat"><span class="sum-stat-label">Sold out first</span><span>${firstSO?`<span class="badge badge-red">${firstSO.size}</span>`:'<span class="badge" style="background:var(--ivory);color:var(--muted)">None</span>'}</span></div>
-        ${firstSO?`<div class="sold-out-note">Size ${firstSO.size} sold out after ${firstSO.sold} units</div>`:''}
+  const c = document.getElementById(cId);
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state">No sales data found.</div>';
+    return;
+  }
+
+  c.innerHTML = items.map((item,i) => {
+    const best = item.variants.reduce((a,b)=>b.sold>a.sold?b:a,{size:'—',sold:0});
+    const firstSO = item.variants.find(v=>v.soldOutAt===1);
+
+    return `
+      <div class="sum-card">
+        <div class="sum-rank">${i+1}</div>
+        <div class="sum-name">${item.title}</div>
+        <div class="sum-category">${item.product_type||'Product'}</div>
+        <div class="sum-stats">
+          <div class="sum-stat"><span class="sum-stat-label">Units sold</span><span>${item.totalSold}</span></div>
+          <div class="sum-stat"><span class="sum-stat-label">Revenue</span><span>${fmt(item.totalRev)}</span></div>
+          <div class="sum-stat"><span class="sum-stat-label">Best size</span><span><span class="badge badge-gold">${best.size}</span></span></div>
+          <div class="sum-stat"><span class="sum-stat-label">Sold out first</span><span>${firstSO?`<span class="badge badge-red">${firstSO.size}</span>`:'<span class="badge" style="background:var(--ivory);color:var(--muted)">None</span>'}</span></div>
+          ${firstSO?`<div class="sold-out-note">Size ${firstSO.size} sold out after ${firstSO.sold} units</div>`:''}
+        </div>
       </div>
-    </div>`;
+    `;
   }).join('');
 }
 
 function renderDetail(items, cId) {
-  const c=document.getElementById(cId);
-  if(!items.length){c.innerHTML='<div class="empty-state">No data.</div>';return;}
-  const maxSold=Math.max(...items.flatMap(i=>i.variants.map(v=>v.sold)),1);
-  c.innerHTML=items.map(item=>`
+  const c = document.getElementById(cId);
+  if (!items.length) {
+    c.innerHTML = '<div class="empty-state">No data.</div>';
+    return;
+  }
+
+  const maxSold = Math.max(...items.flatMap(i=>i.variants.map(v=>v.sold)),1);
+
+  c.innerHTML = items.map(item => `
     <div class="detail-item">
       <div class="detail-item-header">
         <span class="detail-item-name">${item.title}</span>
         <span class="detail-item-cat">${item.product_type||''}</span>
       </div>
       <table class="size-table">
-        <thead><tr><th>Size</th><th>Units sold</th><th>Volume</th><th>Stock left</th><th>Sell-out</th></tr></thead>
-        <tbody>${item.variants.map(v=>`<tr>
-          <td><span class="size-pill">${v.size}</span></td>
-          <td>${v.sold}</td>
-          <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${Math.round(v.sold/maxSold*100)}%"></div></div></td>
-          <td>${v.inventory!=null?v.inventory+' left':'—'}</td>
-          <td>${soLabel(v.soldOutAt)}</td>
-        </tr>`).join('')}</tbody>
+        <thead>
+          <tr><th>Size</th><th>Units sold</th><th>Volume</th><th>Stock left</th><th>Sell-out</th></tr>
+        </thead>
+        <tbody>
+          ${item.variants.map(v => `
+            <tr>
+              <td><span class="size-pill">${v.size}</span></td>
+              <td>${v.sold}</td>
+              <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${Math.round(v.sold/maxSold*100)}%"></div></div></td>
+              <td>${v.inventory!=null?v.inventory+' left':'—'}</td>
+              <td>${soLabel(v.soldOutAt)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
       </table>
-    </div>`).join('');
+    </div>
+  `).join('');
 }
 
-// AI
 let aiCtx='';
+
 function buildAIContext(rev,aov,custs) {
-  const top5=Object.values(getLineSales()).sort((a,b)=>b.qty-a.qty).slice(0,5);
-  aiCtx=`You are an analytics assistant for LRDM Petits, a luxury children's clothing brand in Amsterdam.
+  const top5 = Object.values(getLineSales()).sort((a,b)=>b.qty-a.qty).slice(0,5);
+  aiCtx = `You are an analytics assistant for LRDM Petits, a luxury children's clothing brand in Amsterdam.
 Live Shopify data (last ${days} days): Revenue: ${fmt(rev)}, Orders: ${allOrders.length}, AOV: ${fmt(aov)}, Customers: ${custs}.
 Top products: ${top5.map(p=>`${p.name} (${p.qty} sold)`).join(', ')}.
 Active products: ${activeProducts.length}, Archive/draft: ${archiveProducts.length}.
@@ -388,28 +532,63 @@ Answer warmly, professionally, in 3-4 sentences max. Give actionable buying advi
 }
 
 async function sendAI() {
-  const input=document.getElementById('aiInput'), q=input.value.trim(); if(!q)return;
-  input.value='';
-  const msgs=document.getElementById('aiMessages');
-  msgs.innerHTML+=`<div class="ai-msg user"><div class="sender">You</div><div class="bubble">${q}</div></div>`;
-  msgs.innerHTML+=`<div class="ai-msg bot" id="typingMsg"><div class="sender">LRDM Assistant</div><div class="bubble" style="color:var(--muted);font-style:italic">Thinking…</div></div>`;
-  msgs.scrollTop=msgs.scrollHeight;
-  const btn=document.getElementById('aiBtn'); btn.disabled=true;
+  const input = document.getElementById('aiInput');
+  const q = input.value.trim();
+  if (!q) return;
+
+  input.value = '';
+  const msgs = document.getElementById('aiMessages');
+
+  msgs.innerHTML += `<div class="ai-msg user"><div class="sender">You</div><div class="bubble">${q}</div></div>`;
+  msgs.innerHTML += `<div class="ai-msg bot" id="typingMsg"><div class="sender">LRDM Assistant</div><div class="bubble" style="color:var(--muted);font-style:italic">Thinking…</div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const btn = document.getElementById('aiBtn');
+  btn.disabled = true;
+
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:aiCtx||'You are an e-commerce assistant for LRDM Petits.',messages:[{role:'user',content:q}]})});
-    const data=await res.json();
-    const reply=data.content?.map(b=>b.text||'').join('')||'Unable to respond.';
-    document.getElementById('typingMsg').outerHTML=`<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">${reply}</div></div>`;
+    const res = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:aiCtx||'You are an e-commerce assistant for LRDM Petits.',
+        messages:[{role:'user',content:q}]
+      })
+    });
+
+    const data = await res.json();
+    const reply = data.content?.map(b=>b.text||'').join('') || 'Unable to respond.';
+    document.getElementById('typingMsg').outerHTML = `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">${reply}</div></div>`;
   } catch(e) {
-    document.getElementById('typingMsg').outerHTML=`<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Something went wrong. Please try again.</div></div>`;
+    document.getElementById('typingMsg').outerHTML = `<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Something went wrong. Please try again.</div></div>`;
   }
-  btn.disabled=false; msgs.scrollTop=msgs.scrollHeight;
+
+  btn.disabled = false;
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
-function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.page-tab').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');}
-function showBsSection(id,btn){document.querySelectorAll('.bs-section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.bs-tab').forEach(b=>b.classList.remove('active'));document.getElementById('bs-'+id).classList.add('active');btn.classList.add('active');}
-function setPeriod(d,btn){days=d;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadAll();}
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function showBsSection(id,btn){
+  document.querySelectorAll('.bs-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.bs-tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('bs-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function setPeriod(d,btn){
+  days = d;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAll();
+}
 
 loadAll();
 </script>
