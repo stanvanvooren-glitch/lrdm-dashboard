@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LRDM Petits Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap');
+:root{--cream:#faf7f2;--ivory:#f3ede3;--gold:#b8965a;--gold-light:#d4af7a;--gold-pale:#f0e6d3;--dark:#2c2416;--muted:#7a6e5f;--white:#ffffff;--border:#e8dfd0;--green:#7a9e7e;--red:#c47a6a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh;font-size:13px;}
+nav{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:10;}
+.nav-brand{display:flex;align-items:center;gap:10px;}
+.nav-logo{width:34px;height:34px;background:var(--gold);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Cormorant Garamond',serif;font-size:14px;letter-spacing:1px;}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;letter-spacing:2px;text-transform:uppercase;}
+.nav-sub{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
+.nav-right{display:flex;align-items:center;gap:12px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.live-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--green);}
+.period-toggle{display:flex;border:1px solid var(--border);border-radius:2px;overflow:hidden;}
+.period-btn{padding:5px 13px;font-size:10px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Jost',sans-serif;transition:all .2s;}
+.period-btn.active{background:var(--gold);color:#fff;}
+main{padding:24px 28px;max-width:1400px;margin:0 auto;}
+.section-label{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
+.page-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.page-tab{padding:10px 22px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'Jost',sans-serif;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;}
+.page-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.page{display:none;}.page.active{display:block;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+.kpi-card{background:var(--white);border:1px solid var(--border);padding:20px;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold-light));}
+.kpi-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;}
+.kpi-value{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;line-height:1;margin-bottom:8px;}
+.kpi-sub{font-size:10px;color:var(--muted);}
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:24px;}
+.chart-card{background:var(--white);border:1px solid var(--border);padding:24px;}
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.chart-title{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:400;margin-bottom:3px;}
+.chart-sub{font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:20px;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--ivory);}
+.stat-row:last-child{border-bottom:none;}
+.stat-name{font-size:12px;}
+.stat-bar-wrap{flex:1;margin:0 14px;height:3px;background:var(--ivory);border-radius:2px;}
+.stat-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:2px;}
+.stat-val{font-size:12px;color:var(--muted);min-width:36px;text-align:right;}
+.ai-card{background:var(--white);border:1px solid var(--border);padding:24px;display:flex;flex-direction:column;}
+.ai-badge{display:inline-flex;align-items:center;gap:6px;background:var(--gold-pale);color:var(--gold);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:4px 10px;margin-bottom:12px;width:fit-content;}
+.ai-messages{flex:1;min-height:140px;max-height:180px;overflow-y:auto;margin-bottom:14px;}
+.ai-msg{margin-bottom:10px;}
+.ai-msg.user .bubble{background:var(--gold-pale);padding:9px 13px;font-size:12px;max-width:85%;margin-left:auto;border-radius:2px;}
+.ai-msg.bot .bubble{background:var(--ivory);padding:9px 13px;font-size:12px;max-width:90%;border-radius:2px;line-height:1.6;}
+.sender{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.ai-msg.user .sender{text-align:right;}
+.ai-input-row{display:flex;gap:8px;}
+.ai-input{flex:1;border:1px solid var(--border);padding:9px 13px;font-size:12px;font-family:'Jost',sans-serif;background:var(--cream);outline:none;}
+.ai-input:focus{border-color:var(--gold);}
+.ai-send{background:var(--gold);color:#fff;border:none;padding:9px 16px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'Jost',sans-serif;}
+.ai-send:disabled{background:var(--border);cursor:not-allowed;}
+.bs-tabs{display:flex;gap:8px;margin-bottom:20px;}
+.bs-tab{padding:6px 18px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Jost',sans-serif;border-radius:2px;transition:all .2s;}
+.bs-tab.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.bs-section{display:none;}.bs-section.active{display:block;}
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;}
+.sum-card{background:var(--white);border:1px solid var(--border);padding:18px;position:relative;}
+.sum-rank{position:absolute;top:14px;right:14px;font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:var(--gold-pale);}
+.sum-name{font-family:'Cormorant Garamond',serif;font-size:16px;margin-bottom:2px;}
+.sum-category{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;}
+.sum-stats{display:flex;flex-direction:column;gap:6px;}
+.sum-stat{display:flex;justify-content:space-between;font-size:11px;}
+.sum-stat-label{color:var(--muted);}
+.badge{display:inline-block;padding:2px 8px;border-radius:2px;font-size:10px;}
+.badge-gold{background:var(--gold-pale);color:var(--gold);}
+.badge-red{background:#fdecea;color:var(--red);}
+.sold-out-note{margin-top:10px;padding:8px 10px;background:var(--ivory);font-size:10px;color:var(--muted);border-left:2px solid var(--gold);line-height:1.5;}
+.detail-card{background:var(--white);border:1px solid var(--border);padding:24px;}
+.detail-item{margin-bottom:28px;padding-bottom:28px;border-bottom:1px solid var(--ivory);}
+.detail-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.detail-item-header{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+.detail-item-name{font-family:'Cormorant Garamond',serif;font-size:16px;}
+.detail-item-cat{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.size-table{width:100%;border-collapse:collapse;}
+.size-table th{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);}
+.size-table td{padding:8px;vertical-align:middle;border-bottom:1px solid var(--ivory);font-size:12px;}
+.size-table tr:last-child td{border-bottom:none;}
+.size-pill{display:inline-block;padding:2px 10px;background:var(--ivory);font-size:11px;min-width:36px;text-align:center;}
+.mini-bar-wrap{height:5px;background:var(--ivory);border-radius:3px;overflow:hidden;width:120px;}
+.mini-bar{height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));border-radius:3px;}
+.so-badge{font-size:9px;padding:2px 7px;border-radius:2px;}
+.so-1{background:#fdecea;color:var(--red);}
+.so-2{background:#fff4e5;color:#b87a30;}
+.so-3{background:#edf4ee;color:var(--green);}
+.so-none{background:var(--ivory);color:var(--muted);}
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:16px;}
+.loading-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+.error-state{padding:16px;background:#fdecea;color:var(--red);font-size:12px;line-height:1.6;}
+.empty-state{padding:40px;text-align:center;color:var(--muted);font-size:12px;}
+</style>
+</head>
+<body>
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">L</div>
+    <div>
+      <div class="nav-title">LRDM Petits</div>
+      <div class="nav-sub">Analytics Dashboard</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    <div class="live-dot"></div>
+    <span class="live-label">Live</span>
+    <div class="period-toggle">
+      <button class="period-btn" onclick="setPeriod(7,this)">7D</button>
+      <button class="period-btn active" onclick="setPeriod(30,this)">30D</button>
+      <button class="period-btn" onclick="setPeriod(90,this)">90D</button>
+    </div>
+  </div>
+</nav>
+<main>
+  <div class="page-tabs">
+    <button class="page-tab active" onclick="showPage('overview',this)">Overview</button>
+    <button class="page-tab" onclick="showPage('bestsellers',this)">Bestsellers & Sizes</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="section-label">Overview</div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Total Revenue</div><div class="kpi-value" id="kpi-rev">—</div><div class="kpi-sub" id="kpi-rev-sub">Loading…</div></div>
+      <div class="kpi-card"><div class="kpi-label">Total Orders</div><div class="kpi-value" id="kpi-orders">—</div><div class="kpi-sub" id="kpi-orders-sub">Loading…</div></div>
+      <div class="kpi-card"><div class="kpi-label">Avg. Order Value</div><div class="kpi-value" id="kpi-aov">—</div><div class="kpi-sub" id="kpi-aov-sub">Loading…</div></div>
+      <div class="kpi-card"><div class="kpi-label">Unique Customers</div><div class="kpi-value" id="kpi-cust">—</div><div class="kpi-sub" id="kpi-cust-sub">Loading…</div></div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Revenue Over Time</div>
+        <div class="chart-sub" id="rev-chart-sub">Loading…</div>
+        <canvas id="revenueChart" height="110"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Top Products</div>
+        <div class="chart-sub">By units sold this period</div>
+        <canvas id="topProductsChart" height="200"></canvas>
+      </div>
+    </div>
+    <div class="bottom-row">
+      <div class="chart-card">
+        <div class="chart-title">Top Categories</div>
+        <div class="chart-sub">Revenue share by product type</div>
+        <div id="category-breakdown"><div class="loading-state"><div class="loading-spinner"></div></div></div>
+      </div>
+      <div class="ai-card">
+        <div class="ai-badge">✦ AI Insights</div>
+        <div class="chart-title">Ask your data</div>
+        <div class="chart-sub">Powered by Claude · Live Shopify data</div>
+        <div class="ai-messages" id="aiMessages">
+          <div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Welcome! I'm connected to your live Shopify store. Ask me anything about your sales, bestsellers, or sizing strategy.</div></div>
+        </div>
+        <div class="ai-input-row">
+          <input class="ai-input" id="aiInput" type="text" placeholder="e.g. Which size should I buy more of?" onkeydown="if(event.key==='Enter')sendAI()"/>
+          <button class="ai-send" id="aiBtn" onclick="sendAI()">Ask</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BESTSELLERS -->
+  <div class="page" id="page-bestsellers">
+    <div class="section-label">Bestsellers & Size Intelligence</div>
+    <div class="bs-tabs">
+      <button class="bs-tab active" onclick="showBsSection('active',this)">Active Collection</button>
+      <button class="bs-tab" onclick="showBsSection('archive',this)">Archive / Past Collections</button>
+    </div>
+    <div class="bs-section active" id="bs-active">
+      <div class="section-label">Summary — Top Performers</div>
+      <div class="summary-grid" id="summary-active"><div class="loading-state"><div class="loading-spinner"></div><div class="loading-text">Fetching products</div></div></div>
+      <div class="detail-card">
+        <div class="chart-title" style="margin-bottom:4px;">Size Breakdown by Item</div>
+        <div class="chart-sub">Units sold per size · sell-out status · buying recommendation</div>
+        <div id="detail-active"><div class="loading-state"><div class="loading-spinner"></div></div></div>
+      </div>
+    </div>
+    <div class="bs-section" id="bs-archive">
+      <div class="section-label">Summary — Archive / Past Collections</div>
+      <div class="summary-grid" id="summary-archive"><div class="loading-state"><div class="loading-spinner"></div><div class="loading-text">Fetching archive</div></div></div>
+      <div class="detail-card">
+        <div class="chart-title" style="margin-bottom:4px;">Size Breakdown by Item</div>
+        <div class="chart-sub">Units sold per size · sell-out status · buying recommendation</div>
+        <div id="detail-archive"><div class="loading-state"><div class="loading-spinner"></div></div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// All API calls go through our Vercel backend — no token exposed in the browser
+const API = '/api/shopify';
+let days = 30, allOrders = [], activeProducts = [], archiveProducts = [];
+let revChart, topChart;
+
+async function apiFetch(type) {
+  const r = await fetch(`${API}?type=${type}&days=${days}`);
+  if (!r.ok) throw new Error(`API error: ${r.status}`);
+  return r.json();
+}
+
+async function loadAll() {
+  try {
+    [allOrders, activeProducts, archiveProducts] = await Promise.all([
+      apiFetch('orders'), apiFetch('active'), apiFetch('archive')
+    ]);
+    renderOverview();
+    renderBestsellers();
+  } catch(e) {
+    const msg = `<div class="error-state">⚠ ${e.message}</div>`;
+    ['summary-active','summary-archive','category-breakdown'].forEach(id => {
+      document.getElementById(id).innerHTML = msg;
+    });
+  }
+}
+
+const fmt = n => new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(n);
+
+function renderOverview() {
+  const rev = allOrders.reduce((s,o)=>s+parseFloat(o.total_price||0),0);
+  const aov = allOrders.length ? rev/allOrders.length : 0;
+  const custs = new Set(allOrders.map(o=>o.customer?.id).filter(Boolean)).size;
+  document.getElementById('kpi-rev').textContent = fmt(rev);
+  document.getElementById('kpi-rev-sub').textContent = `Last ${days} days`;
+  document.getElementById('kpi-orders').textContent = allOrders.length;
+  document.getElementById('kpi-orders-sub').textContent = `Last ${days} days`;
+  document.getElementById('kpi-aov').textContent = fmt(aov);
+  document.getElementById('kpi-aov-sub').textContent = 'Per order';
+  document.getElementById('kpi-cust').textContent = custs;
+  document.getElementById('kpi-cust-sub').textContent = 'Unique buyers';
+  renderRevenueChart(); renderTopProductsChart(); renderCategoryBreakdown();
+  buildAIContext(rev, aov, custs);
+}
+
+function getLineSales() {
+  const map = {};
+  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
+    if(!map[li.product_id]) map[li.product_id]={name:li.title,qty:0,rev:0};
+    map[li.product_id].qty += li.quantity;
+    map[li.product_id].rev += parseFloat(li.price)*li.quantity;
+  }));
+  return map;
+}
+
+function getVariantSales() {
+  const map = {};
+  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
+    const k=`${li.product_id}__${li.variant_id}`;
+    map[k]=(map[k]||0)+li.quantity;
+  }));
+  return map;
+}
+
+function renderRevenueChart() {
+  const buckets={};
+  allOrders.forEach(o=>{ const d=o.created_at.slice(0,10); buckets[d]=(buckets[d]||0)+parseFloat(o.total_price||0); });
+  const labels=Object.keys(buckets).sort(), vals=labels.map(l=>buckets[l]);
+  document.getElementById('rev-chart-sub').textContent=`Daily revenue · last ${days} days`;
+  if(revChart)revChart.destroy();
+  revChart=new Chart(document.getElementById('revenueChart').getContext('2d'),{
+    data:{labels,datasets:[{type:'line',label:'Revenue (€)',data:vals,borderColor:'#b8965a',borderWidth:2,
+      pointRadius:2,pointBackgroundColor:'#b8965a',fill:true,tension:0.4,
+      backgroundColor:ctx=>{const g=ctx.chart.ctx.createLinearGradient(0,0,0,200);g.addColorStop(0,'rgba(184,150,90,0.15)');g.addColorStop(1,'rgba(184,150,90,0)');return g;}}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{family:'Jost',size:11},color:'#7a6e5f',boxWidth:12}}},
+      scales:{y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'Jost',size:11},color:'#7a6e5f',callback:v=>'€'+v}},
+        x:{grid:{display:false},ticks:{font:{family:'Jost',size:10},color:'#7a6e5f',maxTicksLimit:10}}}}
+  });
+}
+
+function renderTopProductsChart() {
+  const sales=getLineSales();
+  const sorted=Object.values(sales).sort((a,b)=>b.qty-a.qty).slice(0,6);
+  if(topChart)topChart.destroy();
+  topChart=new Chart(document.getElementById('topProductsChart').getContext('2d'),{
+    type:'bar',
+    data:{labels:sorted.map(p=>p.name.length>22?p.name.slice(0,20)+'…':p.name),
+      datasets:[{data:sorted.map(p=>p.qty),backgroundColor:'rgba(184,150,90,0.2)',borderColor:'#b8965a',borderWidth:1}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'Jost',size:11},color:'#7a6e5f'}},
+        y:{grid:{display:false},ticks:{font:{family:'Jost',size:10},color:'#7a6e5f'}}}}
+  });
+}
+
+function renderCategoryBreakdown() {
+  const catMap={};
+  allOrders.forEach(o=>(o.line_items||[]).forEach(li=>{
+    const cat=li.product_type||'Other';
+    catMap[cat]=(catMap[cat]||0)+parseFloat(li.price)*li.quantity;
+  }));
+  const sorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);
+  const total=sorted.reduce((s,[,v])=>s+v,0);
+  document.getElementById('category-breakdown').innerHTML = sorted.length
+    ? sorted.map(([cat,rev])=>`<div class="stat-row"><span class="stat-name">${cat}</span><div class="stat-bar-wrap"><div class="stat-bar" style="width:${Math.round(rev/total*100)}%"></div></div><span class="stat-val">${fmt(rev)}</span></div>`).join('')
+    : '<div class="empty-state">No data for this period.</div>';
+}
+
+function renderBestsellers() {
+  const salesMap=getLineSales(), varSales=getVariantSales();
+  buildSection(activeProducts, salesMap, varSales, 'active');
+  buildSection(archiveProducts, salesMap, varSales, 'archive');
+}
+
+function buildSection(products, salesMap, varSales, id) {
+  const enriched = products.map(p=>{
+    const s=salesMap[p.id]||{qty:0,rev:0};
+    const variants=(p.variants||[]).map(v=>{
+      const sold=varSales[`${p.id}__${v.id}`]||0;
+      const soldOut=v.inventory_quantity!==undefined&&v.inventory_quantity<=0;
+      return{size:v.title,sold,soldOut,inventory:v.inventory_quantity};
+    });
+    const soVariants=[...variants].filter(v=>v.soldOut).sort((a,b)=>b.sold-a.sold);
+    soVariants.forEach((v,i)=>v.soldOutAt=i+1);
+    return{...p,totalSold:s.qty,totalRev:s.rev,variants};
+  }).filter(p=>p.totalSold>0||p.variants.some(v=>v.soldOut)).sort((a,b)=>b.totalSold-a.totalSold);
+  renderSummary(enriched.slice(0,6),`summary-${id}`);
+  renderDetail(enriched.slice(0,10),`detail-${id}`);
+}
+
+function soLabel(n){
+  if(n===1)return'<span class="so-badge so-1">Sold out 1st</span>';
+  if(n===2)return'<span class="so-badge so-2">Sold out 2nd</span>';
+  if(n===3)return'<span class="so-badge so-3">Sold out 3rd</span>';
+  return'<span class="so-badge so-none">Available</span>';
+}
+
+function renderSummary(items, cId) {
+  const c=document.getElementById(cId);
+  if(!items.length){c.innerHTML='<div class="empty-state">No sales data found.</div>';return;}
+  c.innerHTML=items.map((item,i)=>{
+    const best=item.variants.reduce((a,b)=>b.sold>a.sold?b:a,{size:'—',sold:0});
+    const firstSO=item.variants.find(v=>v.soldOutAt===1);
+    return`<div class="sum-card">
+      <div class="sum-rank">${i+1}</div>
+      <div class="sum-name">${item.title}</div>
+      <div class="sum-category">${item.product_type||'Product'}</div>
+      <div class="sum-stats">
+        <div class="sum-stat"><span class="sum-stat-label">Units sold</span><span>${item.totalSold}</span></div>
+        <div class="sum-stat"><span class="sum-stat-label">Revenue</span><span>${fmt(item.totalRev)}</span></div>
+        <div class="sum-stat"><span class="sum-stat-label">Best size</span><span><span class="badge badge-gold">${best.size}</span></span></div>
+        <div class="sum-stat"><span class="sum-stat-label">Sold out first</span><span>${firstSO?`<span class="badge badge-red">${firstSO.size}</span>`:'<span class="badge" style="background:var(--ivory);color:var(--muted)">None</span>'}</span></div>
+        ${firstSO?`<div class="sold-out-note">Size ${firstSO.size} sold out after ${firstSO.sold} units</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderDetail(items, cId) {
+  const c=document.getElementById(cId);
+  if(!items.length){c.innerHTML='<div class="empty-state">No data.</div>';return;}
+  const maxSold=Math.max(...items.flatMap(i=>i.variants.map(v=>v.sold)),1);
+  c.innerHTML=items.map(item=>`
+    <div class="detail-item">
+      <div class="detail-item-header">
+        <span class="detail-item-name">${item.title}</span>
+        <span class="detail-item-cat">${item.product_type||''}</span>
+      </div>
+      <table class="size-table">
+        <thead><tr><th>Size</th><th>Units sold</th><th>Volume</th><th>Stock left</th><th>Sell-out</th></tr></thead>
+        <tbody>${item.variants.map(v=>`<tr>
+          <td><span class="size-pill">${v.size}</span></td>
+          <td>${v.sold}</td>
+          <td><div class="mini-bar-wrap"><div class="mini-bar" style="width:${Math.round(v.sold/maxSold*100)}%"></div></div></td>
+          <td>${v.inventory!=null?v.inventory+' left':'—'}</td>
+          <td>${soLabel(v.soldOutAt)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`).join('');
+}
+
+// AI
+let aiCtx='';
+function buildAIContext(rev,aov,custs) {
+  const top5=Object.values(getLineSales()).sort((a,b)=>b.qty-a.qty).slice(0,5);
+  aiCtx=`You are an analytics assistant for LRDM Petits, a luxury children's clothing brand in Amsterdam.
+Live Shopify data (last ${days} days): Revenue: ${fmt(rev)}, Orders: ${allOrders.length}, AOV: ${fmt(aov)}, Customers: ${custs}.
+Top products: ${top5.map(p=>`${p.name} (${p.qty} sold)`).join(', ')}.
+Active products: ${activeProducts.length}, Archive/draft: ${archiveProducts.length}.
+Answer warmly, professionally, in 3-4 sentences max. Give actionable buying advice where relevant.`;
+}
+
+async function sendAI() {
+  const input=document.getElementById('aiInput'), q=input.value.trim(); if(!q)return;
+  input.value='';
+  const msgs=document.getElementById('aiMessages');
+  msgs.innerHTML+=`<div class="ai-msg user"><div class="sender">You</div><div class="bubble">${q}</div></div>`;
+  msgs.innerHTML+=`<div class="ai-msg bot" id="typingMsg"><div class="sender">LRDM Assistant</div><div class="bubble" style="color:var(--muted);font-style:italic">Thinking…</div></div>`;
+  msgs.scrollTop=msgs.scrollHeight;
+  const btn=document.getElementById('aiBtn'); btn.disabled=true;
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:aiCtx||'You are an e-commerce assistant for LRDM Petits.',messages:[{role:'user',content:q}]})});
+    const data=await res.json();
+    const reply=data.content?.map(b=>b.text||'').join('')||'Unable to respond.';
+    document.getElementById('typingMsg').outerHTML=`<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">${reply}</div></div>`;
+  } catch(e) {
+    document.getElementById('typingMsg').outerHTML=`<div class="ai-msg bot"><div class="sender">LRDM Assistant</div><div class="bubble">Something went wrong. Please try again.</div></div>`;
+  }
+  btn.disabled=false; msgs.scrollTop=msgs.scrollHeight;
+}
+
+function showPage(id,btn){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.page-tab').forEach(b=>b.classList.remove('active'));document.getElementById('page-'+id).classList.add('active');btn.classList.add('active');}
+function showBsSection(id,btn){document.querySelectorAll('.bs-section').forEach(s=>s.classList.remove('active'));document.querySelectorAll('.bs-tab').forEach(b=>b.classList.remove('active'));document.getElementById('bs-'+id).classList.add('active');btn.classList.add('active');}
+function setPeriod(d,btn){days=d;document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadAll();}
+
+loadAll();
+</script>
+</body>
+</html>
