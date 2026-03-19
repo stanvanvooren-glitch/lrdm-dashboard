@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 const SHOP  = 'lrdm-petits.myshopify.com';
 const TOKEN = process.env.SHOPIFY_TOKEN;
 const API   = `https://${SHOP}/admin/api/2024-01`;
